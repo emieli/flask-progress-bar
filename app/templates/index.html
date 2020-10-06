@@ -1,37 +1,19 @@
-<!DOCTYPE html>
-<html class="no-js">
-<head>
-	<meta charset="utf-8">
-	<title>Flask Progress Bar</title>
-	<meta name="description" content="nanobar.js - Very very lightweight progress bars">
-	<meta name="viewport" content="width=device-width">
-</head>
 <body>
 
-	<div class="container">			
-		<div class="general-buttons">
-			<button class="doc_go" onClick="nanobar.go(33)">nanobar.go(33)</button>
-			<button class="doc_go" onClick="nanobar.go(66)">nanobar.go(66)</button>
-			<button class="doc_go" onClick="nanobar.go(100)">nanobar.go(100)</button>
-		</div>
+<div class="container">
+	<button id="add_bar" onClick="add_bar()" >Add bar</button>
+	<div id="bars"></div>
+</div>
 
-		<h3>Customize nanobar with CSS</h3>
-		<section id="color">
-			<button class="doc_go" onClick="colorbar.go(33)">bar.go(33)</button>
-			<button class="doc_go" onClick="colorbar.go(66)">bar.go(66)</button>
-			<button class="doc_go" onClick="colorbar.go(100)">bar.go(100)</button>
-		</section>
-	</div>
-
-    <script src="/static/nanobar.min.js"></script>
-    <script>
-        var nanobar = new Nanobar();
-        nanobar.go(50);
-        var colorbar = new Nanobar({target: document.getElementById('color')});
-        colorbar.go(20);
-        var centeredbar = new Nanobar({target: document.getElementById('centered')});
-        centeredbar.go(10);
-	</script>
+<script src="/static/nanobar.min.js"></script>
+<script>
+	
+	function add_bar() {
+		var add_bar = new Nanobar({target: document.getElementById('bars')});
+		// add_bar.go(20);
+		document.getElementById("#progress").append = "<hr>" + add_bar.go(20);
+	}
+</script>
 	
 </body>
 </html>
