@@ -3,15 +3,28 @@
 <div class="container">
 	<button id="add_bar" onClick="add_bar()" >Add bar</button>
 	<div id="bars"></div>
+	<p id="output"><p>
 </div>
 
 <script src="/static/nanobar.min.js"></script>
 <script>
+
+	var percent = 0;
+	var nanobars = [];
 	
 	function add_bar() {
-		var add_bar = new Nanobar({target: document.getElementById('bars')});
-		// add_bar.go(20);
-		document.getElementById("#progress").append = "<hr>" + add_bar.go(20);
+		if (nanobars.length == 0) {
+			var bar = new Nanobar({target: document.getElementById('bars')});
+			nanobars.push(bar);
+		}
+		// console.log(nanobars);
+		// document.getElementById("output").innerHTML = "Hello";
+		// document.getElementById("bars").append = add_bar.go(percent);
+		percent = percent + 20;
+		if (percent > 100) {
+			percent = 0;
+		}
+		nanobars[0].go(percent);
 	}
 </script>
 	
