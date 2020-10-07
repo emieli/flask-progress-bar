@@ -3,7 +3,7 @@
 <div class="container">
 	<button id="add_bar" onClick="add_bar()" >Add bar</button>
 	<div id="bars"></div>
-	<p id="output"><p>
+	<div></div>
 </div>
 
 <script src="/static/nanobar.min.js"></script>
@@ -13,18 +13,30 @@
 	var nanobars = [];
 	
 	function add_bar() {
-		if (nanobars.length == 0) {
-			var bar = new Nanobar({target: document.getElementById('bars')});
-			nanobars.push(bar);
-		}
-		// console.log(nanobars);
-		// document.getElementById("output").innerHTML = "Hello";
-		// document.getElementById("bars").append = add_bar.go(percent);
+
+		// Create div to put bar inside
+		var div = document.createElement("div");
+		var bar_id = "bar_" + nanobars.length;
+		div.setAttribute("id", bar_id);
+		document.body.appendChild(div);
+		
+		// Create new bar, push to array
+		var bar = new Nanobar({target: document.getElementById(bar_id)});
+		nanobars.push(bar);
+
 		percent = percent + 20;
 		if (percent > 100) {
-			percent = 0;
+			percent = 20;
 		}
-		nanobars[0].go(percent);
+		var i;
+		for (i = 0; i < nanobars.length; i++) {
+			nanobars[i].go(percent);
+		}
+
+		// Create text about percentage to put inside div
+		var divtext = document.createTextNode(percent + "%");
+		div.appendChild(divtext);
+		
 	}
 </script>
 	
