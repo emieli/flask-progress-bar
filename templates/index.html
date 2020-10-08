@@ -6,7 +6,7 @@
 <button id="add_bar" onClick="progress_bar()" style="margin-bottom: 10px;">Add Progress</button>
 <br>
 
-<script src="/static/nanobar.min.js"></script>
+<script src={{ url_for('static', filename='nanobar.min.js') }}></script>
 <script>
 
 var nanobars = [];
