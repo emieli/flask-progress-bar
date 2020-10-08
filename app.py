@@ -1,12 +1,33 @@
 #!/bin/env python
 
-from flask import render_template
+from flask import Flask, render_template
+from flask_socketio import SocketIO
+from celery import Celery
 
-from app import create_app, socketio
-app = create_app()
+app = Flask(__name__)
+app.debug = True
+app.clients = {}
+
+app.config['SECRET_KEY'] = 'top-secret!'
+# Celery configuration
+app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
+app.config['result_backend'] = 'redis://localhost:6379/0'
+
+# SocketIO
+socketio = SocketIO(app)
+
+# Initialize Celery
+celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
+celery.conf.update(app.config)
+
+@celery.task()
+def add_together(a, b):
+    return a + b
 
 @app.route('/')
 def index():
+    result = add_together.delay(23, 42)
+    print("hello " + str(result.wait()))  # 65
     return render_template('index.html')
 
 if __name__ == '__main__':
