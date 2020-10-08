@@ -7,51 +7,50 @@
 <script src="/static/nanobar.min.js"></script>
 <script>
 
-	var percent = 0;
-	var nanobars = [];
-	
-	function add_bar() {
-		// Create div to put bar inside
-		var div = document.createElement("div");
-		div.setAttribute("id", "bar-" + nanobars.length);
-		document.body.appendChild(div);
+var percent = 0;
+var nanobars = [];
 
-		// Progress text in its own paragraph
-		var p = document.createElement("p");
-		p.setAttribute("id", "p-" + nanobars.length);
-		p.setAttribute("style", "margin: 0;");
-		document.getElementById("bar-" + nanobars.length).appendChild(p);
-		var ptext = document.createTextNode(0);
-		p.appendChild(ptext);
+function add_bar() {
+	// Create div to put bar inside
+	var div = document.createElement("div");
+	div.setAttribute("id", "bar-" + nanobars.length);
+	document.body.appendChild(div);
 
-		// Create new bar, push to array
-		var bar = new Nanobar({target: document.getElementById("bar-" + nanobars.length)});
-		nanobars.push(bar);
-		bar.go(0);
+	// Progress text in its own paragraph
+	var p = document.createElement("p");
+	p.setAttribute("id", "p-" + nanobars.length);
+	p.setAttribute("style", "margin-top: 0;");
+	document.getElementById("bar-" + nanobars.length).appendChild(p);
+	var ptext = document.createTextNode(0);
+	p.appendChild(ptext);
+
+	// Create new bar, push to array
+	var bar = new Nanobar({target: document.getElementById("bar-" + nanobars.length)});
+	nanobars.push(bar);
+	bar.go(0);
+}
+
+function progress_bar() {
+
+	if (nanobars.length === 0) {
+		add_bar();
 	}
 
-	function progress_bar() {
-
-		if (nanobars.length === 0) {
+	var i;
+	for (i = 0; i < nanobars.length; i++) {
+		var progress = Number(document.getElementById("bar-" + i).lastChild.textContent.replace("%", ""));
+		
+		progress = progress + 20;
+		nanobars[i].go(progress);
+		
+		if (progress === 100) {
+			document.getElementById("p-" + i).innerHTML = "Done!";
 			add_bar();
-		}
-
-		var i;
-		for (i = 0; i < nanobars.length; i++) {
-			var progress = Number(document.getElementById("bar-" + i).lastChild.textContent.replace("%", ""));
-			
-			progress = progress + 20;
-			nanobars[i].go(progress);
-			
-			if (progress === 100) {
-				document.getElementById("p-" + i).innerHTML = "Done!";
-				add_bar();
-			} else if (progress < 100) {
-				document.getElementById("p-" + i).innerHTML = progress + "%";
-			}
-			// console.log(document.getElementById("bar-" + i).lastChild.textContent);
+		} else if (progress < 100) {
+			document.getElementById("p-" + i).innerHTML = progress + "%";
 		}
 	}
+}
 </script>
 	
 </body>
