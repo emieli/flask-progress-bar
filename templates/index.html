@@ -1,55 +1,100 @@
 <head>
 <link rel="stylesheet" href={{ url_for('static', filename='style.css') }}>
+<script src={{ url_for('static', filename='nanobar.min.js') }}></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
+<script type="text/javascript" charset="utf-8">
+    var socket = io();
+    socket.on('connect', function() {
+        console.log("Websocket connected.");
+    });
+</script>
 </head>
 <body>
 
-<button id="add_bar" onClick="progress_bar()" style="margin-bottom: 10px;">Add Progress</button>
-<br>
+<button id="add_bar" onClick="socketio_progress_bar()" style="margin-bottom: 10px;">Add Progress</button><br>
 
-<script src={{ url_for('static', filename='nanobar.min.js') }}></script>
 <script>
 
-var nanobars = [];
-add_bar(); // add initial bar
+	var nanobars = [];
 
-function add_bar() {
-	// Create div to put new bar in
-	var div = document.createElement("div");
-	div.setAttribute("id", "bar-" + nanobars.length);
-	document.body.appendChild(div);
+	function socketio_progress_bar() {
+		socket.emit('socketio_progress_bar');
+		console.log("button pressed");
+	}
 
-	// Create paragraph for progress text
-	var p = document.createElement("p");
-	p.setAttribute("id", "p-" + nanobars.length);
-	div.appendChild(p);
+	socket.on('bars', function(bars) {
+		console.log("test");
+		var i;
+		for (i = 0; i < bars.length; i++) {
 
-	// Create new bar, push to array
-	var bar = new Nanobar({
-		target: div,
-		class: "bar",
-		id: "nanobar-" + nanobars.length
+			// Create bar if not exists
+			if (typeof nanobars[i] === 'undefined') {
+
+				// Create div to put new bar in
+				var div = document.createElement("div");
+				div.setAttribute("id", "bar-" + i);
+				document.body.appendChild(div);
+
+				// Create paragraph for progress text
+				var p = document.createElement("p");
+				p.setAttribute("id", "p-" + i);
+				div.appendChild(p);
+
+				// Create new bar, push to array
+				var bar = new Nanobar({
+					target: div,
+					class: "bar",
+					id: "nanobar-" + i
+				});
+				nanobars[i] = bar;
+				console.log(nanobars);
+			}			
+
+			nanobars[i].go(bars[i]['progress']);
+			document.getElementById("p-" + i).innerHTML = bars[i]['progress'] + "%";
+
+		}
 	});
-	nanobars.push(bar);
-}
 
-function progress_bar() {
-	// Go through bars, update progress
-	var i;
-	for (i = 0; i < nanobars.length; i++) {
-		var progress = Number(document.getElementById("p-" + i).textContent.replace("%", ""));
-		
-		progress = progress + 20;
-		nanobars[i].go(progress);
-		
-		if (progress === 100) {
-			document.getElementById("p-" + i).innerHTML = "Done!";
-			document.getElementById("nanobar-" + i).firstChild.style.background = "lime";
-			add_bar();
-		} else if (progress < 100) {
-			document.getElementById("p-" + i).innerHTML = progress + "%";
+	function add_bar() {
+		// Create div to put new bar in
+		var div = document.createElement("div");
+		div.setAttribute("id", "bar-" + nanobars.length);
+		document.body.appendChild(div);
+
+		// Create paragraph for progress text
+		var p = document.createElement("p");
+		p.setAttribute("id", "p-" + nanobars.length);
+		div.appendChild(p);
+
+		// Create new bar, push to array
+		var bar = new Nanobar({
+			target: div,
+			class: "bar",
+			id: "nanobar-" + nanobars.length
+		});
+		nanobars.push(bar);
+	}
+
+	function progress_bar() {
+		// Go through bars, update progress
+		var i;
+		for (i = 0; i < nanobars.length; i++) {
+			var progress = Number(document.getElementById("p-" + i).textContent.replace("%", ""));
+			
+			progress = progress + 20;
+			nanobars[i].go(progress);
+			
+			if (progress === 100) {
+				document.getElementById("p-" + i).innerHTML = "Done!";
+				document.getElementById("nanobar-" + i).firstChild.style.background = "lime";
+				add_bar();
+			} else if (progress < 100) {
+				document.getElementById("p-" + i).innerHTML = progress + "%";
+			}
 		}
 	}
-}
 </script>
 	
 </body>

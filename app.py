@@ -1,7 +1,7 @@
 #!/bin/env python
 
 from flask import Flask, render_template
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit
 from celery import Celery
 
 app = Flask(__name__)
@@ -20,14 +20,59 @@ socketio = SocketIO(app)
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
 
-@celery.task()
-def add_together(a, b):
-    return a + b
+def send_bars(bars):
+    socketio.emit('bars', bars)
+    return
+
+import random
+import time
+
+@celery.task(bind=True)
+def progress_bar(self):
+
+    tasks = [
+        {
+            'progress': 20,
+            'message': "connecting to API"
+        },
+        {
+            'progress': 40,
+            'message': "getting records"
+        },
+        {
+            'progress': 60,
+            'message': "calculating"
+        },
+        {
+            'progress': 80,
+            'message': "changing values"
+        },
+        {
+            'progress': 100,
+            'message': "completed!"
+        }
+    ]
+    for task in tasks:
+        self.update_state(state = "Progress", meta = task)
+        time.sleep(1)    
+    return
+
+
+@socketio.on('socketio_progress_bar')
+def socketio_progress_bar():
+    task = progress_bar.delay()
+    result = progress_bar.AsyncResult(task.id)
+    for i in range(0,10):
+        # print(result.state)
+        print(result.info)
+        time.sleep(1)
+    # emit('bars', bars)
+    return
 
 @app.route('/')
 def index():
-    result = add_together.delay(23, 42)
-    print("hello " + str(result.wait()))  # 65
+    # result = add_together.delay(23, 42)
+    # print("hello " + str(result.wait()))  # 65
     return render_template('index.html')
 
 if __name__ == '__main__':
