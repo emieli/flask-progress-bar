@@ -62,11 +62,22 @@ def progress_bar(self):
 def socketio_progress_bar():
     task = progress_bar.delay()
     result = progress_bar.AsyncResult(task.id)
+    old_result = ""
     for i in range(0,10):
-        # print(result.state)
-        print(result.info)
-        time.sleep(1)
-    # emit('bars', bars)
+
+        if result.info == None:
+            break
+        if result.info == old_result:
+            continue
+        
+        bar = [{
+            'id': task.id,
+            'progress': result.info['progress'],
+            'message': result.info['message']
+        }]
+        emit('bars', bar)
+        old_result = result.info
+        socketio.sleep(1)
     return
 
 @app.route('/')

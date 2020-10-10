@@ -12,11 +12,11 @@
 </head>
 <body>
 
-<button id="add_bar" onClick="socketio_progress_bar()" style="margin-bottom: 10px;">Add Progress</button><br>
+<button id="add_bar" onClick="socketio_progress_bar()" style="margin-bottom: 10px;">Create Bar</button><br>
 
 <script>
 
-	var nanobars = [];
+	var nanobars = {};
 
 	function socketio_progress_bar() {
 		socket.emit('socketio_progress_bar');
@@ -24,35 +24,37 @@
 	}
 
 	socket.on('bars', function(bars) {
-		console.log("test");
+		console.log(bars);
 		var i;
 		for (i = 0; i < bars.length; i++) {
+			
+			var bar_id = bars[i]['id'];
 
 			// Create bar if not exists
-			if (typeof nanobars[i] === 'undefined') {
+			if (typeof nanobars[bar_id] === 'undefined') {
 
 				// Create div to put new bar in
 				var div = document.createElement("div");
-				div.setAttribute("id", "bar-" + i);
+				div.setAttribute("id", "b-" + bar_id);
 				document.body.appendChild(div);
 
 				// Create paragraph for progress text
 				var p = document.createElement("p");
-				p.setAttribute("id", "p-" + i);
+				p.setAttribute("id", "p-" + bar_id);
 				div.appendChild(p);
 
 				// Create new bar, push to array
 				var bar = new Nanobar({
 					target: div,
 					class: "bar",
-					id: "nanobar-" + i
+					id: "nanobar-" + bar_id
 				});
-				nanobars[i] = bar;
+				nanobars[bar_id] = bar;
 				console.log(nanobars);
-			}			
+			}
 
-			nanobars[i].go(bars[i]['progress']);
-			document.getElementById("p-" + i).innerHTML = bars[i]['progress'] + "%";
+			nanobars[bar_id].go(bars[i]['progress']);
+			document.getElementById("p-" + bar_id).innerHTML = bars[i]['message'];
 
 		}
 	});
