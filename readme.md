@@ -5,7 +5,6 @@ apt install python3-pip git curl redis
 pip3 install flask flask-socketio flask-celery eventlet
 
 How to start:
-# ./run_redis.sh &
 celery -A app.celery worker --loglevel=INFO &
 python3 app.py
 
