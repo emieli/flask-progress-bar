@@ -1,6 +1,9 @@
 #!/bin/env python
 
-from flask import Flask, render_template
+import eventlet
+eventlet.monkey_patch()
+
+from flask import Flask, render_template, jsonify
 from flask_socketio import SocketIO, emit
 from celery import Celery
 
@@ -12,9 +15,10 @@ app.config['SECRET_KEY'] = 'top-secret!'
 # Celery configuration
 app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
 app.config['result_backend'] = 'redis://localhost:6379/0'
+app.config['result_expires'] = 10
 
 # SocketIO
-socketio = SocketIO(app)
+socketio = SocketIO(app, message_queue='redis://')
 
 # Initialize Celery
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
@@ -31,60 +35,39 @@ import time
 def progress_bar(self):
 
     tasks = [
-        {
-            'progress': 20,
-            'message': "connecting to API"
-        },
-        {
-            'progress': 40,
-            'message': "getting records"
-        },
-        {
-            'progress': 60,
-            'message': "calculating"
-        },
-        {
-            'progress': 80,
-            'message': "changing values"
-        },
-        {
-            'progress': 100,
-            'message': "completed!"
-        }
+        {'progress': 20,  'message': "connecting to API"},
+        {'progress': 40,  'message': "getting records"},
+        {'progress': 60,  'message': "calculating"},
+        {'progress': 80,  'message': "changing values"},
+        {'progress': 99, 'message': "completed!"}
     ]
     for task in tasks:
         self.update_state(state = "Progress", meta = task)
-        time.sleep(1)    
+        time.sleep(random.randint(1,3))    
     return
 
+tasks = {}
 
-@socketio.on('socketio_progress_bar')
-def socketio_progress_bar():
+@socketio.on('create_bar')
+def create_bar():
+
+    ''' Create a new task '''
     task = progress_bar.delay()
-    result = progress_bar.AsyncResult(task.id)
-    old_result = ""
-    for i in range(0,10):
-
-        if result.info == None:
-            break
-        if result.info == old_result:
-            continue
-        
-        bar = [{
-            'id': task.id,
-            'progress': result.info['progress'],
-            'message': result.info['message']
-        }]
-        emit('bars', bar)
-        old_result = result.info
-        socketio.sleep(1)
+    tasks[task.id] = ""
     return
 
 @app.route('/')
 def index():
-    # result = add_together.delay(23, 42)
-    # print("hello " + str(result.wait()))  # 65
     return render_template('index.html')
+
+@app.route('/get_tasks')
+def get_tasks():
+    results = {}
+    for task_id in tasks.keys():
+        result = progress_bar.AsyncResult(task_id)
+        if result.info == None: continue
+        results[task_id] = result.info
+    return jsonify(results)
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', debug = True)
