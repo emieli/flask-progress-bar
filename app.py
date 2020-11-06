@@ -35,10 +35,10 @@ import time
 def progress_bar(self):
 
     tasks = [
-        {'progress': 20,  'message': "connecting to API"},
-        {'progress': 40,  'message': "getting records"},
-        {'progress': 60,  'message': "calculating"},
-        {'progress': 80,  'message': "changing values"},
+        {'progress': 20, 'message': "connecting to API"},
+        {'progress': 40, 'message': "getting records"},
+        {'progress': 60, 'message': "calculating"},
+        {'progress': 80, 'message': "changing values"},
         {'progress': 99, 'message': "completed!"}
     ]
     for task in tasks:
