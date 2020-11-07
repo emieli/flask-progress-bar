@@ -3,7 +3,6 @@
 <script src={{ url_for('static', filename='nanobar.min.js') }}></script>
 
 <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
-<script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
 
 </head>
 <body>
@@ -12,7 +11,6 @@
 
 <script>
 
-	var nanobars = {};
 
     var socket = io();
     socket.on('connect', function() {
@@ -23,7 +21,12 @@
 		socket.emit('create_bar');
 	}
 
-	function render_bars(bars) {
+	function request_bar_updates() {
+		socket.emit('request_bar_updates');
+	}
+
+	var nanobars = {};
+	socket.on('bar_updates', function(bars) {
 
 		for (const [bar, values] of Object.entries(bars)) {
 
@@ -51,28 +54,12 @@
 			nanobars[bar].go(values['progress']);
 			document.getElementById("p-" + bar).innerHTML = values['message'];
 		}
-	};
-	
-	// send ajax GET request every X seconds to retrieve progress bar updates
-	// I wish the server would be able to push this data out, instead of the client asking for it every X seconds.
-	function ajax_get() {
-		$.ajax({
-			type: 'GET',
-			url: '/get_tasks',
-			success: function(data, status, request) {
-				render_bars(data);
-			},
-			error: function() {
-				alert('Unexpected error');
-			},
-			complete: function(data) {
-				setTimeout(ajax_get, 1000);
-			}
-		})
-	};
-	
-	// Do initial 'get_tasks' GET request
-	setTimeout(ajax_get, 1000);
+		// Trigger new bar update request
+		setTimeout(request_bar_updates, 1000);
+	});
+
+	// Send initial bar update request
+	setTimeout(request_bar_updates, 1000);
 </script>
 	
 </body>
