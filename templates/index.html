@@ -11,10 +11,10 @@
 
 <script>
 
-
     var socket = io();
     socket.on('connect', function() {
         console.log("Websocket connected.");
+		setTimeout(request_bar_updates, 1000);
     });
 
 	function create_bar() {
@@ -27,6 +27,7 @@
 
 	var nanobars = {};
 	socket.on('bar_updates', function(bars) {
+        console.log(bars);
 
 		for (const [bar, values] of Object.entries(bars)) {
 
@@ -53,13 +54,15 @@
 			}
 			nanobars[bar].go(values['progress']);
 			document.getElementById("p-" + bar).innerHTML = values['message'];
+			if (values['progress'] >= 99) {
+				document.getElementById("nanobar-" + bar).firstChild.style.background = "lime";
+			}
+			
 		}
 		// Trigger new bar update request
 		setTimeout(request_bar_updates, 1000);
 	});
-
-	// Send initial bar update request
-	setTimeout(request_bar_updates, 1000);
+	
 </script>
 	
 </body>

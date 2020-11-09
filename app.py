@@ -19,7 +19,7 @@ socketio = SocketIO(app, message_queue='redis://')
 # Initialize Celery
 app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
 app.config['result_backend'] = 'redis://localhost:6379/0'
-app.config['result_expires'] = 10
+app.config['result_expires'] = 30
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
 
@@ -36,7 +36,7 @@ def progress_bar(self):
     ]
     for task in tasks:
         self.update_state(state = "Progress", meta = task)
-        time.sleep(random.randint(0,3))    
+        time.sleep(random.randint(1,3)) # we need a final timeout so that the browser can fetch the task completion before it is removed
     return
 
 tasks = {}
