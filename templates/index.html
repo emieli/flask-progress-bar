@@ -2,68 +2,97 @@
 <link rel="stylesheet" href={{ url_for('static', filename='style.css') }}>
 <script src={{ url_for('static', filename='nanobar.min.js') }}></script>
 
-<script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
+<!-- We need jquery for the $('') javascript things to work, retrieve field data etc -->
+<script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
 
 </head>
 <body>
 
-<button id="add_bar" onClick="create_bar()" style="margin-bottom: 10px;">Create Bar</button><br>
-
+<form id="create_host">
+	Hostname: <input type="text" id="hostname" value="test"> <input type="submit" value="Submit">
+</form>
 <script>
 
     var socket = io();
     socket.on('connect', function() {
         console.log("Websocket connected.");
-		setTimeout(request_bar_updates, 1000);
+		setTimeout(get_task_updates, 1000);
     });
 
-	function create_bar() {
-		socket.emit('create_bar');
-	}
+	$('#create_host').submit(function() {
+		socket.emit('create_host', { hostname: $('#hostname').val() });
+		return false;
+	});
 
-	function request_bar_updates() {
-		socket.emit('request_bar_updates');
+	var tasks = {};
+	socket.on('new_task', function(task_id) {
+		tasks[task_id] = task_id;
+		setTimeout(get_task_updates, 1000);
+	});
+
+	function get_task_updates() {
+		if (Object.keys(tasks).length > 0) {
+			socket.emit('get_task_updates', tasks);
+		}		
 	}
 
 	var nanobars = {};
-	socket.on('bar_updates', function(bars) {
-        console.log(bars);
+	socket.on('task_updates', function(bars) {
+        // console.log(bars);
 
-		for (const [bar, values] of Object.entries(bars)) {
+		for (const [task, values] of Object.entries(bars)) {
 
 			// Create bar if not exists
-			if (document.getElementById("b-" + bar) == null) {
+			if (document.getElementById("b-" + task) == null) {
 
 				// Create div to put new bar in
 				var div = document.createElement("div");
-				div.setAttribute("id", "b-" + bar);
+				div.setAttribute("id", "b-" + task);
 				document.body.appendChild(div);
 
 				// Create paragraph for progress text
 				var p = document.createElement("p");
-				p.setAttribute("id", "p-" + bar);
+				p.setAttribute("id", "p-" + task);
 				div.appendChild(p);
 
 				// Create new bar, push to array
 				var nanobar = new Nanobar({
 					target: div,
 					class: "bar",
-					id: "nanobar-" + bar
+					id: "nanobar-" + task
 				});
-				nanobars[bar] = nanobar;
-			}
-			nanobars[bar].go(values['progress']);
-			document.getElementById("p-" + bar).innerHTML = values['message'];
-			if (values['progress'] >= 99) {
-				document.getElementById("nanobar-" + bar).firstChild.style.background = "lime";
+				nanobars[task] = nanobar;
 			}
 			
+			// Edit bar look:
+			if (values['status'] === "Progress") {
+				nanobars[task].go(values['info']['progress']);
+				document.getElementById("p-" + task).innerHTML = values['info']['message'];
+			} 
+			else if (values['status'] === "SUCCESS") {
+				nanobars[task].go(99);
+				document.getElementById("nanobar-" + task).firstChild.style.background = "lime";
+				document.getElementById("p-" + task).innerHTML = values['info']['message'];
+				delete tasks[task];
+			} 
+			else if (values['status'] === "FAILURE") {
+				nanobars[task].go(99);
+				document.getElementById("nanobar-" + task).firstChild.style.background = "red";
+				document.getElementById("p-" + task).innerHTML = values['info'];
+				delete tasks[task];
+			} 
+			else if (values['status'] === "PENDING") {
+				nanobars[task].go(1);
+				document.getElementById("p-" + task).innerHTML = "Waiting...";
+			}
 		}
-		// Trigger new bar update request
-		setTimeout(request_bar_updates, 1000);
+		// Trigger new task update request
+		setTimeout(get_task_updates, 1000);
 	});
 	
 </script>
-	
+
+
 </body>
 </html>

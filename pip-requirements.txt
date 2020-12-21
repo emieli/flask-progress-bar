@@ -3,3 +3,4 @@ flask-socketio
 flask-celery
 eventlet
 redis
+requests

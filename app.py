@@ -23,41 +23,55 @@ app.config['result_expires'] = 30
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
 
+from api_phpipam import phpipam
 @celery.task(bind=True)
-def progress_bar(self):
-    ''' This is an example of a task. A real world example performs actual API calls. '''
-    tasks = [
-        {'progress': 5,  'message': "connecting to API"},
-        {'progress': 20, 'message': "authenticating"},
-        {'progress': 40, 'message': "getting records"},
-        {'progress': 60, 'message': "calculating"},
-        {'progress': 80, 'message': "changing values"},
-        {'progress': 99, 'message': "completed!"}
-    ]
-    for task in tasks:
-        self.update_state(state = "Progress", meta = task)
-        time.sleep(random.randint(1,3)) # we need a final timeout so that the browser can fetch the task completion before it is removed
+def task_create_host(self, **kwargs):
+
+    meta = {'progress': 25, 'message': 'Connecting to API'}
+    self.update_state(state = "Progress", meta = meta)
+    ipam = phpipam()
+    time.sleep(2)
+
+    meta = {'progress': 50, 'message': 'Checking if host exists'}
+    self.update_state(state = "Progress", meta = meta)
+    host = ipam.get_address(**kwargs)
+    time.sleep(2)
+    if host:
+        return { 'message': f"{host[0]['hostname']} already exists, no action."}
+
+    host = ipam.create_address(subnet_id = 265, payload = {'hostname': kwargs['hostname']})
+    time.sleep(2)
+    if host:
+        return { 'message': f"{host[0]['hostname']} created!"}
+
     return
 
-tasks = {}
-
-@socketio.on('create_bar')
-def create_bar():
-    ''' Create a new task '''
-    task = progress_bar.delay()
-    tasks[task.id] = ""
+@socketio.on('create_host')
+def create_host(data):
+    task = task_create_host.delay(**data)
+    socketio.emit('new_task', task.id)
     return
 
-@socketio.on('request_bar_updates')
-def bar_updates():
-    ''' Send bar updates to client '''
+@socketio.on('get_task_updates')
+def task_updates(tasks):
+    ''' Send current task status to client '''
     results = {}
     for task_id in tasks.keys():
-        result = progress_bar.AsyncResult(task_id)
-        if result.info == None: # bar expired, don't show it
+        task = task_create_host.AsyncResult(task_id)
+
+        if task.status == "FAILURE":
+            print(task)
+            results[task_id] = {
+                'status': task.status,
+                'info': f"Error occured: {task.info}"
+            }
             continue
-        results[task_id] = result.info
-    socketio.emit('bar_updates', results)
+
+        results[task_id] = {
+            'status': task.status,
+            'info': task.info
+        }
+    socketio.emit('task_updates', results)
 
 @app.route('/')
 def index():
