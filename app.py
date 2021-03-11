@@ -23,6 +23,7 @@ app.config['result_backend'] = 'redis://localhost:6379/0'
 app.config['result_expires'] = 30
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
+celery.worker_prefetch_multiplier = 1
 
 from api_phpipam import phpipam
 @celery.task(bind=True)
@@ -37,14 +38,11 @@ def task_create_host(self, **kwargs):
     if not ipam.token:
         self.update_state(state = states.FAILURE, meta = 'Unable to connect to API')
         raise Ignore()
-    
-    time.sleep(2)
 
     meta = {'progress': 50, 'message': 'Checking if host already exists'}
     self.update_state(state = "PROGRESS", meta = meta)
     host = ipam.get_address(**kwargs)
     
-    time.sleep(2)
     if host:
         return { 'message': f"{host[0]['hostname']} already exists, no action."}
 
@@ -52,7 +50,6 @@ def task_create_host(self, **kwargs):
     self.update_state(state = "PROGRESS", meta = meta)
     host = ipam.create_address(subnet_id = 265, payload = {'hostname': kwargs['hostname']})
     
-    time.sleep(2)
     if host:
         return { 'message': f"{kwargs['hostname']} created, id: {host['id']}"}
 

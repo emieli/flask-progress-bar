@@ -24,19 +24,20 @@
     var socket = io();
     socket.on('connect', function() {
         console.log("Websocket connected.");
-		setTimeout(get_task_updates, 1000);
+		// setTimeout(get_task_updates, 100);
     });
 
 	$('#create_host').submit(function() {
 		socket.emit('create_host', { hostname: $('#hostname').val() });
-		setTimeout(get_task_updates, 1000);
+		// setTimeout(get_task_updates, 100);
 		return false;
 	});
 
 	var tasks = {};
 	socket.on('new_task', function(task_id) {
 		tasks[task_id] = task_id;
-		setTimeout(get_task_updates, 1000);
+		get_task_updates();
+		// setTimeout(get_task_updates, 100);
 	});
 
 	function get_task_updates() {
@@ -81,7 +82,7 @@
 			}
 		}
 		// Trigger new task update request
-		setTimeout(get_task_updates, 1000);
+		setTimeout(get_task_updates, 100);
 	});
 	
 </script>
