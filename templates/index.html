@@ -24,12 +24,10 @@
     var socket = io();
     socket.on('connect', function() {
         console.log("Websocket connected.");
-		// setTimeout(get_task_updates, 100);
     });
 
 	$('#create_host').submit(function() {
 		socket.emit('create_host', { hostname: $('#hostname').val() });
-		// setTimeout(get_task_updates, 100);
 		return false;
 	});
 
@@ -37,14 +35,10 @@
 	socket.on('new_task', function(task_id) {
 		tasks[task_id] = task_id;
 		get_task_updates();
-		// setTimeout(get_task_updates, 100);
 	});
 
 	function get_task_updates() {
 		socket.emit('get_task_updates', tasks);
-		// if (Object.keys(tasks).length > 0) {
-		// 	socket.emit('get_task_updates', tasks);
-		// }		
 	}
 
 	socket.on('task_updates', function(bars) {
@@ -66,19 +60,23 @@
 				progress.appendChild(progress_bar);
 			}
 			
-			if (values['status'] === "SUCCESS") {
-				document.getElementById(task).innerHTML = values['info']['message'];
+			if (values['status'] === "finished") {
+				document.getElementById(task).innerHTML = values['meta']['message'];
 				document.getElementById(task).className = "progress-bar bg-success w-100";
 				delete tasks[task];
 			}
-			else if (values['status'] === "FAILURE") {
-				document.getElementById(task).innerHTML = values['info']['message'];
+			else if (values['status'] === "failed") {
+				document.getElementById(task).innerHTML = values['meta']['message'];
 				document.getElementById(task).className = "progress-bar bg-danger w-100";
 				delete tasks[task];
 			}
-			else if (values['status'] === "PROGRESS") {
-				document.getElementById(task).className = "progress-bar progress-bar-striped progress-bar-animated w-" + values['info']['progress'];
-				document.getElementById(task).innerHTML = values['info']['message'];
+			else if (values['status'] === "queued") {
+				document.getElementById(task).innerHTML = "pending";
+				document.getElementById(task).className = "progress-bar bg-secondary w-5";
+			}
+			else if (values['status'] === "started") {
+				document.getElementById(task).className = "progress-bar progress-bar-striped progress-bar-animated w-" + values['meta']['progress'];
+				document.getElementById(task).innerHTML = values['meta']['message'];
 			}
 		}
 		// Trigger new task update request
