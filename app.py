@@ -5,7 +5,8 @@ eventlet.monkey_patch()
 
 from flask import Flask, render_template, jsonify
 from flask_socketio import SocketIO, emit
-from celery import Celery
+from celery import Celery, states
+from celery.exceptions import Ignore
 
 import random
 import time
@@ -27,22 +28,33 @@ from api_phpipam import phpipam
 @celery.task(bind=True)
 def task_create_host(self, **kwargs):
 
-    meta = {'progress': 25, 'message': 'Connecting to API'}
-    self.update_state(state = "Progress", meta = meta)
+    meta = {'progress': 10, 'message': 'Task started'}
+    self.update_state(state = "PROGRESS", meta = meta)
+
+    meta = {'progress': 30, 'message': 'Connecting to API...'}
+    self.update_state(state = "PROGRESS", meta = meta)
     ipam = phpipam()
+    if not ipam.token:
+        self.update_state(state = states.FAILURE, meta = 'Unable to connect to API')
+        raise Ignore()
+    
     time.sleep(2)
 
-    meta = {'progress': 50, 'message': 'Checking if host exists'}
-    self.update_state(state = "Progress", meta = meta)
+    meta = {'progress': 50, 'message': 'Checking if host already exists'}
+    self.update_state(state = "PROGRESS", meta = meta)
     host = ipam.get_address(**kwargs)
+    
     time.sleep(2)
     if host:
         return { 'message': f"{host[0]['hostname']} already exists, no action."}
 
+    meta = {'progress': 75, 'message': 'Host does not exist, creating...'}
+    self.update_state(state = "PROGRESS", meta = meta)
     host = ipam.create_address(subnet_id = 265, payload = {'hostname': kwargs['hostname']})
+    
     time.sleep(2)
     if host:
-        return { 'message': f"{host[0]['hostname']} created!"}
+        return { 'message': f"{kwargs['hostname']} created, id: {host['id']}"}
 
     return
 
@@ -58,15 +70,6 @@ def task_updates(tasks):
     results = {}
     for task_id in tasks.keys():
         task = task_create_host.AsyncResult(task_id)
-
-        if task.status == "FAILURE":
-            print(task)
-            results[task_id] = {
-                'status': task.status,
-                'info': f"Error occured: {task.info}"
-            }
-            continue
-
         results[task_id] = {
             'status': task.status,
             'info': task.info
